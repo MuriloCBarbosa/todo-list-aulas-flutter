@@ -1,6 +1,7 @@
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:todo_list/helpers/task_helper.dart';
 import 'package:todo_list/models/task.dart';
 import 'package:todo_list/views/task_dialog.dart';
@@ -29,7 +30,12 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Lista de Tarefas')),
+      appBar: AppBar(
+        title: Text('Lista de Tarefas'),
+        actions: <Widget>[
+          _buildCircularPercentIndicator()
+        ]
+      ),
       floatingActionButton:
           FloatingActionButton(child: Icon(Icons.add), onPressed: _addNewTask),
       body: _buildTaskList(),
@@ -39,10 +45,12 @@ class _HomePageState extends State<HomePage> {
   Widget _buildTaskList() {
     if (_taskList.isEmpty) {
       return Center(
-        child: _loading ? CircularProgressIndicator() : Text("Sem tarefas!"),
+        child: _loading ? CircularProgressIndicator() : Text("Sem tarefas"),
+        
       );
     } else {
-      return ListView.builder(
+      return ListView.separated(
+        separatorBuilder: (BuildContext context, int index) => Divider(),
         itemBuilder: _buildTaskItemSlidable,
         itemCount: _taskList.length,
       );
@@ -55,6 +63,7 @@ class _HomePageState extends State<HomePage> {
       value: task.isDone,
       title: Text(task.title),
       subtitle: Text(task.description),
+      activeColor: task.getPriorityColor(),
       onChanged: (bool isChecked) {
         setState(() {
           task.isDone = isChecked;
@@ -73,7 +82,7 @@ class _HomePageState extends State<HomePage> {
       actions: <Widget>[
         IconSlideAction(
           caption: 'Editar',
-          color: Colors.blue,
+          color: Colors.yellow[300],
           icon: Icons.edit,
           onTap: () {
             _addNewTask(editedTask: _taskList[index], index: index);
@@ -88,6 +97,16 @@ class _HomePageState extends State<HomePage> {
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildCircularPercentIndicator(){
+    return new CircularPercentIndicator(
+      radius: 40.0,
+      lineWidth: 5.0,
+      percent: _calculeIsDonePercent(),
+      center: new Text(""),
+      progressColor: Colors.green,
     );
   }
 
@@ -121,7 +140,7 @@ class _HomePageState extends State<HomePage> {
     _helper.delete(deletedTask.id);
 
     Flushbar(
-      title: "Exclusão de tarefas",
+      title: "Remover tarefas",
       message: "Tarefa \"${deletedTask.title}\" removida.",
       margin: EdgeInsets.all(8),
       borderRadius: 8,
@@ -139,5 +158,12 @@ class _HomePageState extends State<HomePage> {
         },
       ),
     )..show(context);
+  }
+
+  double _calculeIsDonePercent(){
+    int total = _taskList.length;
+    int isDone = _taskList.where((t) => t.isDone).length;
+
+    return isDone/total;
   }
 }
